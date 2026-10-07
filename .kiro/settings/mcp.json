@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "postgres": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://landrope-app:%3CFl%2F8L%26N%3BH4%3Dn%2C%7DV@34.128.119.132/rfpgl_staging"
+      ],
+      "disabled": false,
+      "autoApprove": [
+        "query"
+      ]
+    }
+  }
+}

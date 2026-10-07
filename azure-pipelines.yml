@@ -1,0 +1,55 @@
+name: $(Build.SourceBranchName).arsip-api.$(Rev:r)
+resources:
+- repo: self
+  fetchDepth: '1'
+
+trigger:
+- dev
+- staging
+- master
+
+variables:
+  BuildConfiguration: 'Release'
+
+jobs:
+- job: NonMaster
+  condition: ne(variables['Build.SourceBranch'], 'refs/heads/master')
+  steps:
+    - task: PublishBuildArtifacts@1
+      displayName: "Publish Artifact"
+      inputs:
+        PathtoPublish: "$(build.artifactstagingdirectory)"
+
+    - task: Docker@2
+      displayName: "Login to NonProd Registry"
+      inputs:
+        command: login
+        containerRegistry: "gar-vs-dev"
+
+    - task: Docker@2
+      displayName: "Build and Push NonProd Image"
+      inputs:
+        Dockerfile: "Dockerfile"
+        command: buildAndPush
+        repository: "vs-dev-asg/arsip/$(Build.SourceBranchName)/arsip-api"
+
+- job: Master
+  condition: eq(variables['Build.SourceBranch'], 'refs/heads/master')
+  steps:
+    - task: PublishBuildArtifacts@1
+      displayName: "Publish Artifact"
+      inputs:
+        PathtoPublish: "$(build.artifactstagingdirectory)"
+
+    - task: Docker@2
+      displayName: "Login to Prod Registry"
+      inputs:
+        command: login
+        containerRegistry: "gar-vs-developer-prod"
+
+    - task: Docker@2
+      displayName: "Build and Push Prod Image"
+      inputs:
+        Dockerfile: "Dockerfile"
+        command: buildAndPush
+        repository: "vs-dev-prod/arsip/$(Build.SourceBranchName)/arsip-api"
