@@ -1,3 +1,4 @@
+from pydantic import EmailStr
 from sqlmodel import Field, Relationship
 from typing import TYPE_CHECKING
 
@@ -11,6 +12,7 @@ class MasterUserBase(SQLModel):
     nama: str = Field(nullable=False)
     username: str = Field(nullable=False, unique=True)
     password: str = Field(nullable=False)
+    email: EmailStr = Field(nullable=True)
     is_active: bool = Field(default=True, nullable=False)
 
 

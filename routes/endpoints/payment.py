@@ -1,8 +1,10 @@
-from fastapi import APIRouter, Depends, Header, Request
+from fastapi import APIRouter, Depends, Header
 from fastapi_pagination import Params
 from sqlmodel import select
 
 from common.enum import OrderEnumSch
+from configs.auth import get_current_user
+from models.master_user_model import MasterUser
 from models.payment_model import Payment
 from schemas.payment_sch import PaymentByIdSch, PaymentCreateSch, PaymentSch
 from schemas.response_sch import (
@@ -15,12 +17,6 @@ from utils.exceptions.common_exception import IdNotFoundException
 import crud
 
 router = APIRouter()
-
-
-def _actor(request: Request) -> str | None:
-    if hasattr(request.state, "login_user"):
-        return getattr(request.state.login_user, "client_id", None)
-    return None
 
 
 @router.get("", response_model=GetResponsePaginatedSch[PaymentSch])
@@ -47,11 +43,11 @@ async def get_by_id(id: str, x_instance_id: str = Header(..., alias="X-Instance-
 
 @router.post("", response_model=PostResponseBaseSch[PaymentSch])
 async def create(
-    request: Request,
     sch: PaymentCreateSch,
     x_instance_id: str = Header(..., alias="X-Instance-Id"),
+    current_user: MasterUser = Depends(get_current_user),
 ):
     obj = await crud.payment.create_payment(
-        sch=sch, instance_id=x_instance_id, created_by=_actor(request)
+        sch=sch, instance_id=x_instance_id, created_by=current_user.id
     )
     return create_response(data=obj)

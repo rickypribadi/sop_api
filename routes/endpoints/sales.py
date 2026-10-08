@@ -1,8 +1,10 @@
-from fastapi import APIRouter, Depends, Header, Request
+from fastapi import APIRouter, Depends, Header
 from fastapi_pagination import Params
 from sqlmodel import select
 
 from common.enum import OrderEnumSch
+from configs.auth import get_current_user
+from models.master_user_model import MasterUser
 from models.sales_model import Sales
 from schemas.sales_sch import (
     RefundBatchCreateSch,
@@ -20,12 +22,6 @@ from utils.exceptions.common_exception import IdNotFoundException
 import crud
 
 router = APIRouter()
-
-
-def _actor(request: Request) -> str | None:
-    if hasattr(request.state, "login_user"):
-        return getattr(request.state.login_user, "client_id", None)
-    return None
 
 
 @router.get("", response_model=GetResponsePaginatedSch[SalesSch])
@@ -52,12 +48,12 @@ async def get_by_id(id: str, x_instance_id: str = Header(..., alias="X-Instance-
 
 @router.post("", response_model=PostResponseBaseSch[SalesByIdSch])
 async def create(
-    request: Request,
     sch: SalesCreateSch,
     x_instance_id: str = Header(..., alias="X-Instance-Id"),
+    current_user: MasterUser = Depends(get_current_user),
 ):
     obj = await crud.sales.create_sales(
-        sch=sch, instance_id=x_instance_id, created_by=_actor(request)
+        sch=sch, instance_id=x_instance_id, created_by=current_user.id
     )
     obj = await crud.sales.get_full(id=obj.id)
     return create_response(data=obj)
@@ -66,15 +62,15 @@ async def create(
 @router.post("/{id}/refund", response_model=PostResponseBaseSch[SalesByIdSch])
 async def create_refund(
     id: str,
-    request: Request,
     sch: RefundBatchCreateSch,
     x_instance_id: str = Header(..., alias="X-Instance-Id"),
+    current_user: MasterUser = Depends(get_current_user),
 ):
     await crud.sales.create_refund(
         sales_id=id,
         sch=sch,
         instance_id=x_instance_id,
-        created_by=_actor(request),
+        created_by=current_user.id,
     )
     obj = await crud.sales.get_full(id=id)
     return create_response(data=obj, message="Refund berhasil")

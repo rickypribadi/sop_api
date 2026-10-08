@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends
 from fastapi_pagination import Params
 from sqlmodel import select
 
 from common.enum import OrderEnumSch
+from configs.auth import get_current_user
 from models.master_user_model import MasterUser
 from schemas.master_user_sch import (
     ChangePasswordSch,
@@ -21,12 +22,6 @@ from utils.exceptions.common_exception import IdNotFoundException
 import crud
 
 router = APIRouter()
-
-
-def _actor(request: Request) -> str | None:
-    if hasattr(request.state, "login_user"):
-        return getattr(request.state.login_user, "client_id", None)
-    return None
 
 
 @router.get("", response_model=GetResponsePaginatedSch[MasterUserSch])
@@ -54,16 +49,23 @@ async def get_by_id(id: str):
 
 
 @router.post("", response_model=PostResponseBaseSch[MasterUserSch])
-async def create(request: Request, sch: MasterUserCreateSch):
+async def create(
+    sch: MasterUserCreateSch,
+    current_user: MasterUser = Depends(get_current_user),
+):
     """Buat user baru. Password disimpan sebagai hash bcrypt."""
-    obj = await crud.master_user.create_user(sch=sch, created_by=_actor(request))
+    obj = await crud.master_user.create_user(sch=sch, created_by=current_user.id)
     return create_response(data=obj)
 
 
 @router.put("/{id}/change-password", response_model=PutResponseBaseSch[MasterUserSch])
-async def change_password(id: str, request: Request, sch: ChangePasswordSch):
+async def change_password(
+    id: str,
+    sch: ChangePasswordSch,
+    current_user: MasterUser = Depends(get_current_user),
+):
     """Ubah password: verifikasi password lama lalu simpan hash password baru."""
     obj = await crud.master_user.change_password(
-        user_id=id, sch=sch, updated_by=_actor(request)
+        user_id=id, sch=sch, updated_by=current_user.id
     )
     return create_response(data=obj, message="Password berhasil diubah")

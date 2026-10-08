@@ -1,9 +1,11 @@
-from fastapi import APIRouter, Depends, Header, Request
+from fastapi import APIRouter, Depends, Header
 from fastapi_pagination import Params
 from sqlmodel import select
 
 from common.enum import OrderEnumSch
+from configs.auth import get_current_user
 from models.master_lokasi_model import MasterLokasi
+from models.master_user_model import MasterUser
 from schemas.master_lokasi_sch import (
     MasterLokasiByIdSch,
     MasterLokasiCreateSch,
@@ -21,12 +23,6 @@ from utils.exceptions.common_exception import IdNotFoundException
 import crud
 
 router = APIRouter()
-
-
-def _actor(request: Request) -> str | None:
-    if hasattr(request.state, "login_user"):
-        return getattr(request.state.login_user, "client_id", None)
-    return None
 
 
 @router.get("", response_model=GetResponsePaginatedSch[MasterLokasiSch])
@@ -53,26 +49,26 @@ async def get_by_id(id: str, x_instance_id: str = Header(..., alias="X-Instance-
 
 @router.post("", response_model=PostResponseBaseSch[MasterLokasiSch])
 async def create(
-    request: Request,
     sch: MasterLokasiCreateSch,
     x_instance_id: str = Header(..., alias="X-Instance-Id"),
+    current_user: MasterUser = Depends(get_current_user),
 ):
     obj_in = MasterLokasi(instance_id=x_instance_id, **sch.model_dump())
-    obj = await crud.master_lokasi.create(obj_in=obj_in, created_by=_actor(request))
+    obj = await crud.master_lokasi.create(obj_in=obj_in, created_by=current_user.id)
     return create_response(data=obj)
 
 
 @router.put("/{id}", response_model=PutResponseBaseSch[MasterLokasiSch])
 async def update(
     id: str,
-    request: Request,
     sch: MasterLokasiUpdateSch,
     x_instance_id: str = Header(..., alias="X-Instance-Id"),
+    current_user: MasterUser = Depends(get_current_user),
 ):
     obj_current = await crud.master_lokasi.get(id=id)
     if obj_current is None or obj_current.instance_id != x_instance_id:
         raise IdNotFoundException(MasterLokasi, id)
     obj = await crud.master_lokasi.update(
-        obj_current=obj_current, obj_new=sch, updated_by=_actor(request)
+        obj_current=obj_current, obj_new=sch, updated_by=current_user.id
     )
     return create_response(data=obj)

@@ -27,6 +27,17 @@ class CRUDMasterUser(
         )
         return result.scalar_one_or_none()
 
+    async def authenticate(
+        self, *, username: str, password: str
+    ) -> MasterUser | None:
+        """Verifikasi kredensial. Kembalikan user jika cocok & aktif, else None."""
+        user = await self.get_by_username(username=username)
+        if user is None or not user.is_active:
+            return None
+        if not verify_password(password, user.password):
+            return None
+        return user
+
     async def create_user(
         self, *, sch: MasterUserCreateSch, created_by: str | None = None
     ) -> MasterUser:
