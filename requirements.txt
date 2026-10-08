@@ -35,3 +35,5 @@ stringcase==1.2.0
 typing-inspection==0.4.2
 typing_extensions==4.15.0
 urllib3==2.6.3
+bcrypt==5.0.0
+greenlet==3.5.6

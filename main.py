@@ -11,16 +11,16 @@ from routes import api
 
 
 def init_app():
-    app = FastAPI(title="SKELETON FASTAPI",
+    app = FastAPI(title="SOP FASTAPI",
                   contact={
                       "name": "developer",
-                      "email": "ginanjar.sumantri@agungsedayu.com"
+                      "email": "rickypribadi79@gmail.com"
                   },
-                  description="This is a service for Archive.",
+                  description="This is a service for SOP Web",
                   version="2.0",
-                  docs_url="/skeleton/docs",
-                  redoc_url="/skeleton/redoc",
-                  openapi_url="/skeleton/openapi.json")
+                  docs_url="/sop/docs",
+                  redoc_url="/sop/redoc",
+                  openapi_url="/sop/openapi.json")
 
     @app.get("/")
     async def home():
@@ -45,7 +45,7 @@ def init_app():
         allow_headers=['*'],
     )
 
-    app.include_router(api.api_router, prefix="/skeleton")
+    app.include_router(api.api_router, prefix="/sop/api")
     
     add_pagination(app)
 
