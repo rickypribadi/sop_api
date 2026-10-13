@@ -4,6 +4,7 @@ from configs.auth import get_current_user
 from routes.endpoints import (
     auth,
     worker,
+    role,
     master_user,
     master_vendor,
     master_barang,
@@ -28,6 +29,9 @@ api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
 # Existing
 api_router.include_router(
     worker.router, prefix="/worker", tags=["worker"], dependencies=_auth
+)
+api_router.include_router(
+    role.router, prefix="/role", tags=["role"], dependencies=_auth
 )
 
 # Master

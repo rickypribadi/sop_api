@@ -14,5 +14,9 @@ class Settings(BaseSettings):
     # Batas maksimal masa berlaku token (jam) - dari env.
     MAX_TOKEN_EXPIRE_HOURS: int = 8
 
+    # Proteksi Swagger / ReDoc dengan HTTP Basic auth (kredensial dari env).
+    DOCS_USERNAME: str = "admin"
+    DOCS_PASSWORD: str = "CHANGE_ME_IN_ENV_docs_password"
+
 
 settings = Settings()

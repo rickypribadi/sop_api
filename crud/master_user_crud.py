@@ -1,10 +1,14 @@
 from fastapi import HTTPException, status
 from fastapi_async_sqlalchemy import db
+from sqlalchemy.orm import selectinload
 from sqlmodel import func, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from crud.base_crud import CRUDBase
+from models.mapping_user_instance_model import MappingUserInstance
+from models.master_instance_model import MasterInstance
 from models.master_user_model import MasterUser
+from models.role_model import Role
 from schemas.master_user_sch import (
     ChangePasswordSch,
     MasterUserCreateSch,
@@ -38,6 +42,15 @@ class CRUDMasterUser(
             return None
         return user
 
+    async def get_full(self, *, id: str) -> MasterUser | None:
+        """Ambil user + mapping instance/role (eager-load untuk response ByIdSch)."""
+        result = await db.session.execute(
+            select(MasterUser)
+            .where(MasterUser.id == id)
+            .options(selectinload(MasterUser.instances))
+        )
+        return result.scalar_one_or_none()
+
     async def create_user(
         self, *, sch: MasterUserCreateSch, created_by: str | None = None
     ) -> MasterUser:
@@ -50,19 +63,44 @@ class CRUDMasterUser(
                 f"Username '{sch.username}' sudah dipakai",
             )
 
+        # Validasi tiap instance_id & role_id sebelum menyimpan apa pun.
+        for m in sch.instances:
+            if await db_session.get(MasterInstance, m.instance_id) is None:
+                raise HTTPException(
+                    status.HTTP_404_NOT_FOUND,
+                    f"Instance {m.instance_id} tidak ditemukan",
+                )
+            if await db_session.get(Role, m.role_id) is None:
+                raise HTTPException(
+                    status.HTTP_404_NOT_FOUND,
+                    f"Role {m.role_id} tidak ditemukan",
+                )
+
         try:
             user = MasterUser(
                 nama=sch.nama,
                 username=sch.username,
                 password=hash_password(sch.password),
+                email=sch.email,
                 is_active=sch.is_active,
             )
             if created_by:
                 user.created_by = user.updated_by = created_by
             db_session.add(user)
+            await db_session.flush()
+
+            for m in sch.instances:
+                mapping = MappingUserInstance(
+                    user_id=user.id,
+                    instance_id=m.instance_id,
+                    role_id=m.role_id,
+                )
+                if created_by:
+                    mapping.created_by = mapping.updated_by = created_by
+                db_session.add(mapping)
+
             await db_session.commit()
-            await db_session.refresh(user)
-            return user
+            return await self.get_full(id=user.id)
         except HTTPException:
             await db_session.rollback()
             raise

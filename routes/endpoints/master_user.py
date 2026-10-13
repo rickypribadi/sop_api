@@ -42,18 +42,18 @@ async def get_list(
 
 @router.get("/{id}", response_model=GetResponseBaseSch[MasterUserByIdSch])
 async def get_by_id(id: str):
-    obj = await crud.master_user.get(id=id)
+    obj = await crud.master_user.get_full(id=id)
     if obj is None:
         raise IdNotFoundException(MasterUser, id)
     return create_response(data=obj)
 
 
-@router.post("", response_model=PostResponseBaseSch[MasterUserSch])
+@router.post("", response_model=PostResponseBaseSch[MasterUserByIdSch])
 async def create(
     sch: MasterUserCreateSch,
     current_user: MasterUser = Depends(get_current_user),
 ):
-    """Buat user baru. Password disimpan sebagai hash bcrypt."""
+    """Buat user baru (dengan mapping instance & role). Password di-hash bcrypt."""
     obj = await crud.master_user.create_user(sch=sch, created_by=current_user.id)
     return create_response(data=obj)
 

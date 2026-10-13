@@ -1,4 +1,5 @@
 from .worker_crud import worker
+from .role_crud import role
 
 # Master
 from .master_user_crud import master_user

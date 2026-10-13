@@ -22,5 +22,6 @@ class MasterUserFullBase(BaseULIDModel, MasterUserBase):
 
 class MasterUser(MasterUserFullBase, table=True):
     instances: list["MappingUserInstance"] = Relationship(
-        sa_relationship_kwargs={"lazy": "select", "cascade": "all, delete-orphan"}
+        back_populates="user",
+        sa_relationship_kwargs={"lazy": "select", "cascade": "all, delete-orphan"},
     )

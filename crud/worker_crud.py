@@ -6,7 +6,7 @@ from sqlmodel import and_, select, or_
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm import selectinload, joinedload
 from crud.base_crud import CRUDBase
-from models import Worker, WorkerRole, Department
+from models import Worker, WorkerRole
 from schemas.worker_sch import WorkerCreateSch, WorkerUpdateSch, WorkerSch
 from common.enum import OrderEnumSch
 from itertools import product
@@ -16,7 +16,6 @@ class CRUDWorker(CRUDBase[Worker, WorkerCreateSch, WorkerUpdateSch]):
     
     async def get_paginated(self, *, params: Params, **kwargs):
         query = self.base_query()
-        query = self.join_department(query=query)
         query = self.create_filter(query=query, filter=kwargs)
 
         return await paginate(db.session, query, params)
@@ -101,8 +100,5 @@ class CRUDWorker(CRUDBase[Worker, WorkerCreateSch, WorkerUpdateSch]):
                    query = query.order_by(order_column.asc())
 
         return query
-    
-    def join_department(self, *, query):
-        query = query.outerjoin(Department, Department.id == Worker.department_id)
-        return query
+
 worker = CRUDWorker(Worker)
