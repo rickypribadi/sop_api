@@ -1,28 +1,36 @@
-# 
-FROM --platform=linux/amd64 python:3.14-slim
-RUN apt-get update
-RUN apt-get install -y gcc
-RUN apt-get update && apt-get install ffmpeg libsm6 libxext6  -y
-ENV PYTHONBUFFERED 1
+# # 
+# FROM --platform=linux/amd64 python:3.14-slim
+# RUN apt-get update
+# RUN apt-get install -y gcc
+# RUN apt-get update && apt-get install ffmpeg libsm6 libxext6  -y
+# ENV PYTHONBUFFERED 1
 
-# 
-WORKDIR /code
+# # 
+# WORKDIR /code
 
-# 
-COPY ./requirements.txt /code/requirements.txt
+# # 
+# COPY ./requirements.txt /code/requirements.txt
 
-# 
-RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
+# # 
+# RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 
-# 
-COPY ./ /code
+# # 
+# COPY ./ /code
 
-# 
+# CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 
-# CMD ["sh", "-c", "gunicorn main:app --max-requests-jitter 10 --max-requests 40 --timeout 300 --bind :8401 --workers 3 --threads 4 -k uvicorn.workers.UvicornWorker"]
-# CMD ["sh", "-c", "gunicorn main:app --bind :8401 -k uvicorn.workers.UvicornWorker"]
+FROM python:3.11-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+EXPOSE 8000
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
-
-# CMD ["fastapi", "run", "main.py", "--port", "8401"]
-# CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8401"]
